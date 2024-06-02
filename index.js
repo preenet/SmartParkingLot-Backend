@@ -228,6 +228,44 @@ app.get("/api/province", async (req, res) =>{
 })
 
 
+
+
+//add access history
+app.post('/api/addHistory', async (req, res) => {
+  try {
+    const { license_id, access_date, access_type, image_source } = req.body; 
+    
+    // // Check if the provided province ID is valid
+    // const [existingProvince] = await conn.query('SELECT * FROM provinces WHERE id = ?', [province_id]);
+    // if (existingProvince.length === 0) {
+    //   return res.status(400).json({ message: 'Invalid province ID' });
+    // }
+
+    // // Check if the provided license number already exists for the given province
+    // const [existingLicense] = await conn.query('SELECT * FROM license_plate WHERE license_number = ? AND province_id = ?', [license_number, province_id]);
+    // if (existingLicense.length > 0) {
+    //   return res.status(400).json({ message: 'License number already exists for this province' });
+    // }
+
+    const historyData = {
+      license_id, 
+      access_date, 
+      access_type, 
+      image_source
+    };
+
+    const [result] = await conn.query('INSERT INTO access_history SET ?', historyData);
+    res.json({
+      message: 'Access History inserted successfully',
+      result
+    });
+  } catch (error) {
+    console.error('Error inserting access history:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 // Listen
 app.listen(port, async () => {
   await initMySQL();
