@@ -265,6 +265,18 @@ app.post('/api/addHistory', async (req, res) => {
   }
 });
 
+// Get history
+app.get("/api/history", async (req, res) =>{
+  try {
+    const [result] = await conn.query('SELECT * FROM access_history');
+    res.json({ users: result });
+  } catch (error) {
+    console.log('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+})
+
+
 
 // Listen
 app.listen(port, async () => {
