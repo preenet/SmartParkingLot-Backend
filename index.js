@@ -3,6 +3,8 @@ const express = require("express");
 const mysql = require("mysql2/promise");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const fs = require('fs');
+const { writeToStream } = require('@fast-csv/format');
 
 const app = express();
 
@@ -32,7 +34,27 @@ const initMySQL = async () => {
     database: process.env.DB_DATABASE,
     port: process.env.DB_PORT // Added port configuration
   });
+
 };
+// Function to query data from MySQL and export to CSV
+const queryDataAndExportToCSV = async () => {
+  try {
+    const [rows] = await conn.execute("SELECT * FROM license_plate");
+    const jsonData = JSON.parse(JSON.stringify(rows));
+    console.log("jsonData", jsonData);
+
+    // Export to CSV
+    const ws = fs.createWriteStream('license_plate_data.csv');
+    console.log(process.cwd())
+    writeToStream(ws, jsonData, { headers: true })
+      .on('finish', () => {
+        console.log('CSV file has been written successfully');
+      });
+  } catch (error) {
+    console.error("Error querying data:", error);
+  }
+};
+
 
 // อันนี้ลองregister
 app.post('/api/register', async (req,res) => {
@@ -278,8 +300,15 @@ app.get("/api/history", async (req, res) =>{
 
 
 
-// Listen
+// Listen and initialize MySQL connection
 app.listen(port, async () => {
-  await initMySQL();
-  console.log("Server started at port 8000");
+  try {
+    await initMySQL();
+    console.log(`Server started at port ${port}`);
+    // Query data and export to CSV
+    await queryDataAndExportToCSV();
+  } catch (error) {
+    console.error("Error initializing MySQL connection:", error);
+    process.exit(1); // Exit the process with an error code
+  }
 });
