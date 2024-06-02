@@ -269,7 +269,7 @@ app.post('/api/addHistory', async (req, res) => {
 app.get("/api/history", async (req, res) =>{
   try {
     const [result] = await conn.query('SELECT * FROM access_history');
-    res.json({ users: result });
+    res.json(result);
   } catch (error) {
     console.log('Error:', error);
     res.status(500).json({ error: 'Internal server error' });
