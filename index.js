@@ -7,6 +7,7 @@ const fs = require('fs');
 const { writeToStream } = require('@fast-csv/format');
 const admin = require('firebase-admin');
 const path = require('path');
+const cron = require('node-cron');
 
 const app = express();
 
@@ -80,7 +81,11 @@ const queryDataAndExportToCSV = async () => {
   }
 };
 
-
+// Schedule task to run every hour
+cron.schedule('0 * * * *', async () => {
+  console.log('Running cron job to recreate and upload CSV');
+  await queryDataAndExportToCSV();
+});
 
 // อันนี้ลองregister
 app.post('/api/register', async (req,res) => {
