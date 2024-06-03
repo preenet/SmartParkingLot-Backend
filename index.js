@@ -5,10 +5,22 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const fs = require('fs');
 const { writeToStream } = require('@fast-csv/format');
+const admin = require('firebase-admin');
+const path = require('path');
 
 const app = express();
 
 app.use(express.json());
+
+// Initialize Firebase Admin SDK
+const serviceAccount = require('./smart-parking-21e9b-firebase-adminsdk-cmymm-d701fc4c06.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: 'smart-parking-21e9b.appspot.com' // Replace with your bucket URL
+});
+
+const bucket = admin.storage().bucket();
 
 app.use(
   cors({
@@ -36,6 +48,8 @@ const initMySQL = async () => {
   });
 
 };
+
+
 // Function to query data from MySQL and export to CSV
 const queryDataAndExportToCSV = async () => {
   try {
@@ -44,16 +58,28 @@ const queryDataAndExportToCSV = async () => {
     console.log("jsonData", jsonData);
 
     // Export to CSV
-    const ws = fs.createWriteStream('license_plate_data.csv');
-    console.log(process.cwd())
+    const csvFilePath = path.join(__dirname, 'license_plate_data.csv');
+    const ws = fs.createWriteStream(csvFilePath);
+    console.log(process.cwd());
     writeToStream(ws, jsonData, { headers: true })
-      .on('finish', () => {
+      .on('finish', async () => {
         console.log('CSV file has been written successfully');
+
+        // Upload the CSV file to Firebase Storage
+        await bucket.upload(csvFilePath, {
+          destination: 'license_plate_data.csv', // Destination file name in the bucket
+          metadata: {
+            contentType: 'text/csv',
+          },
+        });
+
+        console.log('CSV file has been uploaded to Firebase Storage');
       });
   } catch (error) {
     console.error("Error querying data:", error);
   }
 };
+
 
 
 // อันนี้ลองregister

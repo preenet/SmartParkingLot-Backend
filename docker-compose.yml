@@ -10,6 +10,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./smart-parking-21e9b-firebase-adminsdk-cmymm-d701fc4c06.json:/usr/src/app/smart-parking-21e9b-firebase-adminsdk-cmymm-d701fc4c06.json
+      # Mount Google Cloud credentials into the container
+      - mysql_data_test:/var/lib/mysql
 
   db:
     image: mysql:latest
