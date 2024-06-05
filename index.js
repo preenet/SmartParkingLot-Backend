@@ -13,13 +13,23 @@ const app = express();
 
 app.use(express.json());
 
-// Initialize Firebase Admin SDK
-const serviceAccount = require('./smart-parking-21e9b-firebase-adminsdk-cmymm-d701fc4c06.json');
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: 'smart-parking-21e9b.appspot.com' // Replace with your bucket URL
+  credential: admin.credential.cert({
+    type: process.env.FIREBASE_TYPE,
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Replace escaped newlines
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri: process.env.FIREBASE_AUTH_URI,
+    token_uri: process.env.FIREBASE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+  }),
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET
 });
+
 
 const bucket = admin.storage().bucket();
 
@@ -82,7 +92,7 @@ const queryDataAndExportToCSV = async () => {
 };
 
 // Schedule task to run every hour
-cron.schedule('0 * * * *', async () => {
+cron.schedule('* * * * *', async () => {
   console.log('Running cron job to recreate and upload CSV');
   await queryDataAndExportToCSV();
 });

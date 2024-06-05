@@ -9,8 +9,6 @@ RUN npm install
 
 COPY index.js ./
 
-COPY smart-parking-21e9b-firebase-adminsdk-cmymm-d701fc4c06.json ./  
-
 EXPOSE 8000
 
 CMD ["node", "index.js"]
