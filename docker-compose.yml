@@ -18,7 +18,7 @@ services:
     container_name: db
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: tutorial
+      MYSQL_DATABASE: Smart_Parking_Lot_db
     ports:
       - "3306:3306"
     volumes:

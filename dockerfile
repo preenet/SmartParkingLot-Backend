@@ -1,14 +1,20 @@
-
 FROM node:18
 
+# Create app directory
 WORKDIR /usr/src/app
 
-COPY package.json ./
+# Install app dependencies
+COPY package*.json ./
+
 
 RUN npm install
 
-COPY index.js ./
 
-EXPOSE 8000
+# Bundle app source
+COPY . .
 
-CMD ["node", "index.js"]
+# Expose the port the app runs on
+EXPOSE 8080
+
+# Define the command to run the app
+CMD [ "node", "index.js" ]
