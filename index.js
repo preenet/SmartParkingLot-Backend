@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const licenseRoutes = require('./routes/licenseRoutes');
 const provinceRoutes = require('./routes/provinceRoutes');
 const historyRoutes = require('./routes/historyRoutes');
+const detectionRoutes = require('./routes/detectionRoutes');
 
 const app = express();
 const port = 8000;
@@ -24,6 +25,7 @@ app.use('/api', authRoutes);
 app.use('/api', licenseRoutes);
 app.use('/api', provinceRoutes);
 app.use('/api', historyRoutes);
+app.use('/api', detectionRoutes);
 
 cron.schedule('* * * * *', async () => {
   console.log('Running cron job to recreate and upload CSV');

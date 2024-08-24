@@ -57,6 +57,16 @@ const initDatabase = async () => {
       )
     `);
 
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS detection_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        no_of_cars INT NOT NULL,
+        no_of_empty INT NOT NULL,
+        detection_date DATETIME NOT NULL,
+        image_source VARCHAR(255) NOT NULL
+      )
+    `);
+
         // Insert initial user data
         const username = 'test01';
         const password = '123';
