@@ -35,7 +35,7 @@ const addLicense = async (req, res) => {
   }
 };
 
-const getLicensePlates = async (req, res) => {
+const getAllLicensePlates = async (req, res) => {
   try {
     const conn = getConnection();
     const query = `
@@ -50,6 +50,25 @@ const getLicensePlates = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+const getLicensePlatesById = async (req, res) => {
+  try {
+    const conn = getConnection();
+    const { id } = req.params;
+    const [result] = await conn.query(
+      "SELECT lp.*, p.province FROM license_plate lp JOIN provinces p ON lp.province_id = p.id WHERE lp.id = ?",
+      [id]
+    );
+    if (result.length === 0) {
+      return res.status(404).json({ message: "License plate not found" });
+    }
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error fetching license plate data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 const deleteLicense = async (req, res) => {
   try {
@@ -108,4 +127,4 @@ const editLicense = async (req, res) => {
   }
 };
 
-module.exports = { addLicense, getLicensePlates, deleteLicense, editLicense };
+module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById };
