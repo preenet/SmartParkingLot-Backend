@@ -27,18 +27,24 @@ app.use('/api', provinceRoutes);
 app.use('/api', historyRoutes);
 app.use('/api', detectionRoutes);
 
-cron.schedule('* * * * *', async () => {
-  console.log('Running cron job to recreate and upload CSV');
-  await queryDataAndExportToCSV();
-});
+if (process.env.NODE_ENV !== 'test') {
+  cron.schedule('* * * * *', async () => {
+    console.log('Running cron job to recreate and upload CSV');
+    await queryDataAndExportToCSV();
+  });
+}
 
 app.listen(port, async () => {
   try {
     await initDatabase();
     console.log(`Server started at port ${port}`);
-    await queryDataAndExportToCSV();
+    if (process.env.NODE_ENV !== 'test') {
+      await queryDataAndExportToCSV();
+    }
   } catch (error) {
     console.error("Error initializing MySQL connection:", error);
     process.exit(1);
   }
 });
+
+module.exports = app; // Export app for testing

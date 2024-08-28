@@ -5,9 +5,14 @@ const addDetect = async (req, res) => {
       const conn = getConnection();
       const { no_of_cars, no_of_empty, detection_date, image_source } = req.body;
 
+    // Check for missing fields
+    if (!no_of_cars || !no_of_empty || !detection_date || !image_source) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }     
+
       const detectionData = { no_of_cars, no_of_empty, detection_date, image_source  };
       const [result] = await conn.query('INSERT INTO detection_history SET ?', detectionData);
-      res.json({ message: 'Access History inserted successfully', result });
+      res.json({ message: 'Detection data inserted successfully', result });
     } catch (error) {
       console.error('Error inserting license plate:', error);
       res.status(500).json({ message: 'Internal server error' });

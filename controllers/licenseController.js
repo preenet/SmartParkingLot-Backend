@@ -96,6 +96,8 @@ const editLicense = async (req, res) => {
     const { id } = req.params;
     const { first_name, last_name, license_number, province_id } = req.body;
 
+    console.log('Received data:', { id, first_name, last_name, license_number, province_id });
+
     // Check if the license exists
     const [existingLicense] = await conn.query(
       "SELECT * FROM license_plate WHERE id = ?",
@@ -114,8 +116,10 @@ const editLicense = async (req, res) => {
       return res.status(400).json({ message: "Invalid province ID" });
     }
 
-    // Update the license information
+    // Define updatedData
     const updatedData = { first_name, last_name, license_number, province_id };
+    
+    // Update the license information
     const [result] = await conn.query(
       "UPDATE license_plate SET ? WHERE id = ?",
       [updatedData, id]
@@ -126,5 +130,6 @@ const editLicense = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById };

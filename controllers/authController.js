@@ -27,13 +27,13 @@ const login = async (req, res) => {
   
       const [result] = await conn.query("SELECT * FROM users WHERE username = ?", [username]);
       if (!result.length) {
-        return res.status(400).send({ message: "Invalid email or password" });
+        return res.status(401).send({ message: "Invalid username or password" });
       }
   
       const user = result[0];
       const match = await bcrypt.compare(password, user.password);
       if (!match) {
-        return res.status(400).send({ message: "Invalid email or password" });
+        return res.status(401).send({ message: "Invalid username or password" });
       }
   
       const token = jwt.sign({ username, role: 'admin' }, secret, { expiresIn: '1h' });
@@ -57,7 +57,13 @@ const login = async (req, res) => {
         return res.status(401).json({ error: 'Token missing' });
       }
   
-      const user = jwt.verify(token, secret);
+      let user;
+      try {
+        user = jwt.verify(token, secret);
+      } catch (err) {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+  
       if (!user || !user.username) {
         return res.status(401).json({ error: 'Invalid token' });
       }
@@ -68,11 +74,12 @@ const login = async (req, res) => {
       }
   
       const [result] = await conn.query('SELECT * FROM users');
-      res.json({ users: result[0] });
+      res.json({ users: result });
     } catch (error) {
       console.log('Error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-
+  
+  
 module.exports = {  login, auth };
