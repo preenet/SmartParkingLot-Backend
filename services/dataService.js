@@ -53,7 +53,7 @@ const initDatabase = async () => {
         access_date DATETIME NOT NULL,
         access_type VARCHAR(255) NOT NULL,
         image_source VARCHAR(255) NOT NULL,
-        FOREIGN KEY (license_id) REFERENCES license_plate(id)
+        FOREIGN KEY (license_id) REFERENCES license_plate(id) ON DELETE CASCADE
       )
     `);
 

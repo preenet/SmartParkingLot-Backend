@@ -75,20 +75,41 @@ const deleteLicense = async (req, res) => {
     const conn = getConnection();
     const { id } = req.params;
     console.log("Deleting license plate with ID:", id);
-    const [result] = await conn.query(
+
+    // Start a transaction
+    await conn.query('START TRANSACTION');
+
+    // Delete related records from access_history first
+    const [historyResult] = await conn.query(
+      "DELETE FROM access_history WHERE license_id = ?",
+      id
+    );
+    console.log("Access history deleted:", historyResult);
+
+    // Then delete the license plate
+    const [licenseResult] = await conn.query(
       "DELETE FROM license_plate WHERE id = ?",
       id
     );
-    console.log("Query result:", result);
-    if (result.affectedRows === 0) {
+    console.log("License plate deleted:", licenseResult);
+
+    // Commit the transaction
+    await conn.query('COMMIT');
+
+    if (licenseResult.affectedRows === 0) {
       return res.status(404).json({ message: "License plate not found" });
     }
-    res.json({ message: "License plate deleted successfully" });
+
+    res.json({ message: "License plate and related access history deleted successfully" });
   } catch (error) {
     console.log("Error deleting license plate:", error);
+
+    // Rollback the transaction in case of error
+    await conn.query('ROLLBACK');
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 const editLicense = async (req, res) => {
   try {
