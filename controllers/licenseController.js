@@ -152,5 +152,19 @@ const editLicense = async (req, res) => {
   }
 };
 
+const addUnknown = async (req, res) => {
+  try {
+    const conn = getConnection();
+    const { access_date, license_number, image_source } = req.body;
 
-module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById };
+    const unknownData = { access_date, license_number, image_source };
+    const [result] = await conn.query('INSERT INTO license_plate_unknown SET ?', unknownData);
+    res.json({ message: 'License Plate Unknown inserted successfully', result });
+  } catch (error) {
+    console.error('Error inserting linense plate unknow:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById, addUnknown };

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { writeToStream } = require('@fast-csv/format');
 const { bucket } = require('./firebaseService');
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcrypt');
 
 let conn = null;
 
@@ -67,18 +67,27 @@ const initDatabase = async () => {
       )
     `);
 
-        // Insert initial user data
-        const username = 'test01';
-        const password = '123';
-        const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-    
-        const [userRows] = await conn.execute('SELECT COUNT(*) as count FROM users WHERE username = ?', [username]);
-        if (userRows[0].count === 0) {
-          await conn.execute('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
-          console.log(`User ${username} added to the database`);
-        } else {
-          console.log(`User ${username} already exists in the database`);
-        }
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS license_plate_unknown (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        access_date DATETIME NOT NULL,
+        license_number VARCHAR(255) NOT NULL,
+        image_source VARCHAR(255) NOT NULL
+      )
+    `);
+
+    // Insert initial user data
+    const username = 'test01';
+    const password = '123';
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+
+    const [userRows] = await conn.execute('SELECT COUNT(*) as count FROM users WHERE username = ?', [username]);
+    if (userRows[0].count === 0) {
+      await conn.execute('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
+      console.log(`User ${username} added to the database`);
+    } else {
+      console.log(`User ${username} already exists in the database`);
+    }
 
     // Check if the provinces table is empty
     const [rows] = await conn.execute('SELECT COUNT(*) as count FROM provinces');
