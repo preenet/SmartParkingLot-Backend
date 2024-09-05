@@ -166,16 +166,5 @@ const addUnknown = async (req, res) => {
   }
 };
 
-const getAllUnknown= async (req, res) => {
-  try {
-    const conn = getConnection();
-    const [result] = await conn.query('SELECT * FROM license_plate_unknown');
-    res.json(result);
-  } catch (error) {
-    console.log('Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
 
-
-module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById, addUnknown, getAllUnknown };
+module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById, addUnknown };
