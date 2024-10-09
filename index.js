@@ -21,6 +21,7 @@ app.use(cors({
   origin: ["http://localhost:5173"],
 }));
 
+//Routes
 app.use('/api', authRoutes);
 app.use('/api', licenseRoutes);
 app.use('/api', provinceRoutes);
