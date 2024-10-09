@@ -5,6 +5,21 @@ const addLicense = async (req, res) => {
     const conn = getConnection();
     const { first_name, last_name, license_number, province_id } = req.body;
 
+    const firstnameRegex = /^[ก-๙a-zA-Z0-9]{5,20}$/;
+    if (!firstnameRegex.test(first_name)) {
+      return res.status(400).send({ message: 'First Name must be alphanumeric and between 5-20 characters long with no spaces.' });
+    }
+
+    const lastnameRegex = /^[ก-๙a-zA-Z0-9]{5,20}$/;
+    if (!lastnameRegex.test(last_name)) {
+      return res.status(400).send({ message: 'Last Name must be alphanumeric and between 5-20 characters long with no spaces.' });
+    }
+
+    const licensenumberRegex = /^[ก-๙a-zA-Z0-9]{3,10}$/;
+    if (!licensenumberRegex.test(license_number)) {
+      return res.status(400).send({ message: 'License Number must be alphanumeric and between 3-10 characters long with no spaces.' });
+    }
+
     const [existingProvince] = await conn.query(
       "SELECT * FROM provinces WHERE id = ?",
       [province_id]
@@ -75,20 +90,41 @@ const deleteLicense = async (req, res) => {
     const conn = getConnection();
     const { id } = req.params;
     console.log("Deleting license plate with ID:", id);
-    const [result] = await conn.query(
+
+    // Start a transaction
+    await conn.query('START TRANSACTION');
+
+    // Delete related records from access_history first
+    const [historyResult] = await conn.query(
+      "DELETE FROM access_history WHERE license_id = ?",
+      id
+    );
+    console.log("Access history deleted:", historyResult);
+
+    // Then delete the license plate
+    const [licenseResult] = await conn.query(
       "DELETE FROM license_plate WHERE id = ?",
       id
     );
-    console.log("Query result:", result);
-    if (result.affectedRows === 0) {
+    console.log("License plate deleted:", licenseResult);
+
+    // Commit the transaction
+    await conn.query('COMMIT');
+
+    if (licenseResult.affectedRows === 0) {
       return res.status(404).json({ message: "License plate not found" });
     }
-    res.json({ message: "License plate deleted successfully" });
+
+    res.json({ message: "License plate and related access history deleted successfully" });
   } catch (error) {
     console.log("Error deleting license plate:", error);
+
+    // Rollback the transaction in case of error
+    await conn.query('ROLLBACK');
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 const editLicense = async (req, res) => {
   try {
@@ -131,5 +167,30 @@ const editLicense = async (req, res) => {
   }
 };
 
+const addUnknown = async (req, res) => {
+  try {
+    const conn = getConnection();
+    const { access_date, license_number, image_source } = req.body;
 
-module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById };
+    const unknownData = { access_date, license_number, image_source };
+    const [result] = await conn.query('INSERT INTO license_plate_unknown SET ?', unknownData);
+    res.json({ message: 'License Plate Unknown inserted successfully', result });
+  } catch (error) {
+    console.error('Error inserting linense plate unknow:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const getAllUnknown= async (req, res) => {
+  try {
+    const conn = getConnection();
+    const [result] = await conn.query('SELECT * FROM license_plate_unknown');
+    res.json(result);
+  } catch (error) {
+    console.log('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+module.exports = { addLicense, getAllLicensePlates, deleteLicense, editLicense, getLicensePlatesById, addUnknown, getAllUnknown };
