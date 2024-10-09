@@ -5,6 +5,21 @@ const addLicense = async (req, res) => {
     const conn = getConnection();
     const { first_name, last_name, license_number, province_id } = req.body;
 
+    const firstnameRegex = /^[ก-๙a-zA-Z0-9]{5,20}$/;
+    if (!firstnameRegex.test(first_name)) {
+      return res.status(400).send({ message: 'First Name must be alphanumeric and between 5-20 characters long with no spaces.' });
+    }
+
+    const lastnameRegex = /^[ก-๙a-zA-Z0-9]{5,20}$/;
+    if (!lastnameRegex.test(last_name)) {
+      return res.status(400).send({ message: 'Last Name must be alphanumeric and between 5-20 characters long with no spaces.' });
+    }
+
+    const licensenumberRegex = /^[ก-๙a-zA-Z0-9]{3,10}$/;
+    if (!licensenumberRegex.test(license_number)) {
+      return res.status(400).send({ message: 'License Number must be alphanumeric and between 3-10 characters long with no spaces.' });
+    }
+
     const [existingProvince] = await conn.query(
       "SELECT * FROM provinces WHERE id = ?",
       [province_id]
