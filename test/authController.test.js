@@ -3,6 +3,7 @@ const app = require('../index'); // Import app instance
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { getConnection } = require('../services/dataService');
+const secret = process.env.SECRET || "mysecret";
 
 // Mock the dataService module to use the mock implementation
 jest.mock('../services/dataService', () => ({
@@ -23,76 +24,99 @@ beforeEach(() => {
 });
 
 describe('Integration tests with MySQL', () => {
-  test('should return 200 and a token for successful login', async () => {
-    bcrypt.compare.mockResolvedValue(true); // Password matches
-    jwt.sign.mockReturnValue('mockedToken');
+  describe('Login Tests', () => {
+    test('should return 200 and a token for successful login', async () => {
+      bcrypt.compare.mockResolvedValue(true); // Password matches
+      jwt.sign.mockReturnValue('mockedToken');
 
-    getConnection.mockReturnValueOnce({
-      query: jest.fn().mockResolvedValue([[
-        { username: 'test01', password: await bcrypt.hash('123', 10) }
-      ], []]),
+      getConnection.mockReturnValueOnce({
+        query: jest.fn().mockResolvedValue([[
+          { username: 'test01', password: await bcrypt.hash('Password@123', 10) }
+        ], []]),
+      });
+
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: 'test01', password: 'Password@123' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('token');
+      expect(response.body.message).toBe("Login successful");
     });
 
-    const response = await request(app)
-      .post('/api/login')
-      .send({ username: 'test01', password: '123' });
+    test('should return 400 if username or password is missing', async () => {
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: '', password: 'Password@123' });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('token');
-  });
-
-  test('should return 400 if username or password is missing', async () => {
-    const response = await request(app)
-      .post('/api/login')
-      .send({ username: '', password: '123' });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({ message: 'Please enter username or password' });
-  });
-
-  test('should return 401 if user is not found', async () => {
-    getConnection.mockReturnValueOnce({
-      query: jest.fn().mockResolvedValue([[], []]),
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ message: 'Username must be alphanumeric and between 5-20 characters long with no spaces.' });
     });
 
-    const response = await request(app)
-      .post('/api/login')
-      .send({ username: 'nonexistent', password: '123' });
+    test('should return 400 if username format is invalid', async () => {
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: 'ab', password: 'Password@123' });
 
-    expect(response.status).toBe(401);
-    expect(response.body).toEqual({ message: 'Invalid username or password' });
-  });
-
-  test('should return 401 if password does not match', async () => {
-    bcrypt.compare.mockResolvedValue(false); // Simulate password mismatch
-
-    getConnection.mockReturnValueOnce({
-      query: jest.fn().mockResolvedValue([[
-        { username: 'test01', password: await bcrypt.hash('123', 10) }
-      ], []]),
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ message: 'Username must be alphanumeric and between 5-20 characters long with no spaces.' });
     });
 
-    const response = await request(app)
-      .post('/api/login')
-      .send({ username: 'test01', password: 'wrongpassword' });
+    test('should return 400 if password format is invalid', async () => {
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: 'test01', password: '123456' }); // Missing uppercase, special character
 
-    expect(response.status).toBe(401);
-    expect(response.body).toEqual({ message: 'Invalid username or password' });
-  });
-
-  test('should return 500 if there is a server error', async () => {
-    getConnection.mockReturnValueOnce({
-      query: jest.fn().mockRejectedValue(new Error('Query error')),
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ 
+        message: 'Password must be 8-30 characters long, and include at least one uppercase letter, one lowercase letter, one number, and one special character.' 
+      });
     });
 
-    const response = await request(app)
-      .post('/api/login')
-      .send({ username: 'test01', password: '123' });
+    test('should return 401 if user is not found', async () => {
+      getConnection.mockReturnValueOnce({
+        query: jest.fn().mockResolvedValue([[], []]),
+      });
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({ message: 'An error occurred while logging in' });
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: 'nonexistent', password: 'Password@123' });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ message: 'Invalid username or password' });
+    });
+
+    test('should return 401 if password does not match', async () => {
+      bcrypt.compare.mockResolvedValue(false); // Simulate password mismatch
+
+      getConnection.mockReturnValueOnce({
+        query: jest.fn().mockResolvedValue([[
+          { username: 'test01', password: await bcrypt.hash('Password@123', 10) }
+        ], []]),
+      });
+
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: 'test01', password: 'Password@1234' });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ message: 'Invalid username or password' });
+    });
+
+    test('should return 500 if there is a server error', async () => {
+      getConnection.mockReturnValueOnce({
+        query: jest.fn().mockRejectedValue(new Error('Query error')),
+      });
+
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: 'test01', password: 'Password@123' });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ message: 'An error occurred while logging in' });
+    });
   });
-  
+
   // Tests for the auth middleware
   describe('Auth middleware tests', () => {
     test('should return 401 if authorization header is missing', async () => {
@@ -145,22 +169,20 @@ describe('Integration tests with MySQL', () => {
     });
 
     test('should return 200 and user list on successful authentication', async () => {
-        jwt.verify.mockReturnValue({ username: 'test01' });
-      
-        getConnection.mockReturnValueOnce({
-          query: jest.fn().mockResolvedValue([[{ username: 'test01' }], []]), // Return a single user object within an array
-        });
-      
-        const response = await request(app)
-          .get('/api/auth')
-          .set('Authorization', 'Bearer validToken')
-          .expect('Content-Type', /json/)
-          .expect(200);
-      
-        expect(response.body).toEqual({ users: [{ username: 'test01' }] }); // Expect users to be an array
+      jwt.verify.mockReturnValue({ username: 'test01' });
+
+      getConnection.mockReturnValueOnce({
+        query: jest.fn().mockResolvedValue([[{ username: 'test01' }], []]), // Return a single user object within an array
       });
-      
-      
+
+      const response = await request(app)
+        .get('/api/auth')
+        .set('Authorization', 'Bearer validToken')
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(response.body).toEqual({ users: [{ username: 'test01' }] }); // Expect users to be an array
+    });
 
     test('should return 500 if there is a server error', async () => {
       jwt.verify.mockReturnValue({ username: 'test01' });
@@ -178,5 +200,4 @@ describe('Integration tests with MySQL', () => {
       expect(response.body).toEqual({ error: 'Internal server error' });
     });
   });
-
 });
