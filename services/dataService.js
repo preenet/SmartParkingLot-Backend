@@ -77,8 +77,8 @@ const initDatabase = async () => {
     `);
 
     // Insert initial user data
-    const username = 'test01';
-    const password = '123';
+    const username = 'admin01';
+    const password = 'Admin@01';
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
 
     const [userRows] = await conn.execute('SELECT COUNT(*) as count FROM users WHERE username = ?', [username]);

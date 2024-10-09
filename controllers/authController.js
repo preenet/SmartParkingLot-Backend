@@ -3,46 +3,71 @@ const jwt = require('jsonwebtoken');
 const { getConnection } = require('../services/dataService');
 const secret = process.env.SECRET || "mysecret";
 
-// const register = async (req, res) => {
-//   try {
-//     const { username, password } = req.body;
-//     const passwordHash = await bcrypt.hash(password, 10);
-//     const userData = { username, password: passwordHash };
-//     const [result] = await conn.query('INSERT INTO users SET ?', userData);
-//     res.json({ message: 'insert ok la', result });
-//   } catch (error) {
-//     console.log('error', error);
-//     res.json({ message: 'insert error la', error });
-//   }
-// };
+const register = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const usernameRegex = /^[a-zA-Z0-9]{5,20}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).send({ message: 'Username must be alphanumeric and between 5-20 characters long with no spaces.' });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).send({ 
+        message: 'Password must be 8-30 characters long, and include at least one uppercase letter, one lowercase letter, one number, and one special character.' 
+      });
+    }
+    
+    const passwordHash = await bcrypt.hash(password, 10);
+    const userData = { username, password: passwordHash };
+    const [result] = await conn.query('INSERT INTO users SET ?', userData);
+    res.json({ message: 'Insert Successful', result });
+  } catch (error) {
+    console.log('error', error);
+    res.json({ message: 'insert error la', error });
+  }
+};
 
 const login = async (req, res) => {
-    try {
-      const conn = getConnection();
-      const { username, password } = req.body;
-  
-      if (!username || !password) {
-        return res.status(400).send({ message: "Please enter username or password" });
-      }
-  
-      const [result] = await conn.query("SELECT * FROM users WHERE username = ?", [username]);
-      if (!result.length) {
-        return res.status(401).send({ message: "Invalid username or password" });
-      }
-  
-      const user = result[0];
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) {
-        return res.status(401).send({ message: "Invalid username or password" });
-      }
-  
-      const token = jwt.sign({ username, role: 'admin' }, secret, { expiresIn: '1h' });
-      res.send({ message: "Login successful", token });
-    } catch (error) {
-      console.log('Error in /api/login:', error);
-      res.status(500).send({ message: 'An error occurred while logging in' });
+  try {
+    const conn = getConnection();
+    const { username, password } = req.body;
+
+    const usernameRegex = /^[a-zA-Z0-9]{5,20}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).send({ message: 'Username must be alphanumeric and between 5-20 characters long with no spaces.' });
     }
-  };
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).send({ 
+        message: 'Password must be 8-30 characters long, and include at least one uppercase letter, one lowercase letter, one number, and one special character.' 
+      });
+    }
+
+    if (!username || !password) {
+      return res.status(400).send({ message: "Please enter username and password" });
+    }
+
+    const [result] = await conn.query("SELECT * FROM users WHERE username = ?", [username]);
+    if (!result.length) {
+      return res.status(401).send({ message: "Invalid username or password" });
+    }
+
+    const user = result[0];
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).send({ message: "Invalid username or password" });
+    }
+
+    const token = jwt.sign({ username, role: 'admin' }, secret, { expiresIn: '1h' });
+    res.send({ message: "Login successful", token });
+  } catch (error) {
+    res.status(500).send({ message: 'An error occurred while logging in' });
+  }
+};
+
   
   const auth = async (req, res) => {
     try {
@@ -82,4 +107,4 @@ const login = async (req, res) => {
   };
   
   
-module.exports = {  login, auth };
+module.exports = {  login, auth, register };
